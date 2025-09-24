@@ -7,7 +7,7 @@ export default function App() {
   const [running, setRunning] = useState(false);
   const [eventCount, setEventCount] = useState(0);
   const dataRef = useRef([]);
-  const xPosRef = useRef(0);
+  const intervalRef = useRef(null);
 
   // Generate synthetic signal: noise + occasional spikes
   const generatePoint = () => {
@@ -16,45 +16,64 @@ export default function App() {
     return noise + spike;
   };
 
-  useEffect(() => {
-    if (!running) return;
+  const draw = () => {
     const ctx = canvasRef.current.getContext("2d");
     const width = canvasRef.current.width;
     const height = canvasRef.current.height;
     ctx.clearRect(0, 0, width, height);
-    ctx.strokeStyle = "#00ff99";
-    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(0, height / 2);
+    dataRef.current.forEach((val, i) => {
+      const y = height / 2 - val * 100;
+      ctx.lineTo(i, y);
+    });
+    ctx.strokeStyle = "#00ff99";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  };
 
-    const interval = setInterval(() => {
-      const point = generatePoint();
-      dataRef.current.push(point);
-      if (dataRef.current.length > width) dataRef.current.shift();
+  const startStop = () => {
+    if (running) {
+      clearInterval(intervalRef.current);
+      setRunning(false);
+    } else {
+      setRunning(true);
+      intervalRef.current = setInterval(() => {
+        const point = generatePoint();
+        dataRef.current.push(point);
+        // Use shorter visualization: keep only last 200 points
+        if (dataRef.current.length > 200) dataRef.current.shift();
 
-      // Draw waveform
-      ctx.clearRect(0, 0, width, height);
-      ctx.beginPath();
-      dataRef.current.forEach((val, i) => {
-        const y = height / 2 - val * 100;
-        if (i === 0) ctx.moveTo(i, y);
-        else ctx.lineTo(i, y);
-      });
-      ctx.stroke();
+        // Detect events
+        if (point > threshold) {
+          setEventCount((c) => c + 1);
+          const ctx = canvasRef.current.getContext("2d");
+          const width = canvasRef.current.width;
+          const height = canvasRef.current.height;
+          ctx.fillStyle = "red";
+          ctx.beginPath();
+          // mark event at last point
+          ctx.arc(
+            (dataRef.current.length - 1) * (width / 200),
+            height / 2 - point * 100,
+            4,
+            0,
+            2 * Math.PI
+          );
+          ctx.fill();
+        }
 
-      // Detect events
-      if (point > threshold) {
-        setEventCount((c) => c + 1);
-        // highlight event as red dot
-        ctx.fillStyle = "red";
-        ctx.beginPath();
-        ctx.arc(width - 1, height / 2 - point * 100, 4, 0, 2 * Math.PI);
-        ctx.fill();
-      }
-    }, 50);
+        draw();
+      }, 30); // faster updates
+    }
+  };
 
-    return () => clearInterval(interval);
-  }, [running, threshold]);
+  const resetEvents = () => {
+    setEventCount(0);
+    dataRef.current = [];
+    const ctx = canvasRef.current.getContext("2d");
+    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+  };
 
   return (
     <div className="App">
@@ -72,11 +91,11 @@ export default function App() {
             onChange={(e) => setThreshold(parseFloat(e.target.value))}
           />
         </label>
-        <button onClick={() => setRunning(!running)}>
-          {running ? "Stop" : "Start"}
-        </button>
+        <button onClick={startStop}>{running ? "Stop" : "Start"}</button>
+        <button onClick={resetEvents}>Reset</button>
         <p>Detected Events: {eventCount}</p>
       </div>
     </div>
   );
 }
+
