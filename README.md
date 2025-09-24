@@ -16,5 +16,4 @@ Showcases a lightweight approach to real-time seismic signal monitoring—simila
 ```bash
 npx create-react-app microseismic-detector
 cd microseismic-detector
-# Replace src/App.js and src/App.css with the provided files
 npm start
