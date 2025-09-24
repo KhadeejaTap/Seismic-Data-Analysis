@@ -1,1 +1,20 @@
 # Seismic-Data-Analysis
+  Microseismic Event Detector
+
+A simple browser-based demo that simulates microseismic signals and detects “events” in real time using only **React, JavaScript, HTML, and CSS**.
+
+## Purpose
+Showcases a lightweight approach to real-time seismic signal monitoring—similar to what geothermal operations use to detect microseismicity—without any backend or heavy ML libraries.
+
+## Features
+- Synthetic seismic-like waveform with random noise and spikes
+- Adjustable detection threshold slider
+- Real-time visualization on an HTML `<canvas>`
+- Event counter with live updates
+
+## Quick Start
+```bash
+npx create-react-app microseismic-detector
+cd microseismic-detector
+# Replace src/App.js and src/App.css with the provided files
+npm start
